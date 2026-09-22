@@ -1,0 +1,1 @@
+{"name":"geolocation-panel","version":"0.1.0","private":true,"type":"module","scripts":{"test":"node --test tests/unit.test.mjs","test:browser":"node tests/browser.mjs","check":"node tests/check.mjs extension/manifest.json"}}

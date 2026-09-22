@@ -1,0 +1,6 @@
+{
+  "manifest_version": 3,
+  "name": "Geo Panel",
+  "version": "0.0.0",
+  "description": "地理位置侧栏：基线版本，读取功能尚未启用。"
+}
