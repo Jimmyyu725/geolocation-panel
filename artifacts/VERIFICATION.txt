@@ -1,0 +1,65 @@
+Geo Panel 验证记录
+项目：/home/jingtianyu/projects/geolocation-panel
+分支：feature/geolocation-panel
+改动字段：manifest.version 0.0.0 → 0.1.0；新增 content_scripts、background、side_panel、action、permissions；未启用 → 读取启用。
+MODIFIED_FILE: /home/jingtianyu/projects/geolocation-panel/extension/manifest.json
+DIFF_FILE: /home/jingtianyu/projects/geolocation-panel/artifacts/changes.patch
+VERIFICATION: /home/jingtianyu/projects/geolocation-panel/artifacts/VERIFICATION.txt
+ROLLBACK: /home/jingtianyu/projects/geolocation-panel/artifacts/ROLLBACK.sh
+原始 SHA256: 2f0cc1571676b619cf5c963ed1a7dae1c3e07e80ef673f8d2c697c6c9e9588d5
+修改 SHA256: d39c3d2d7aeb80112067b943d8201fc93650a7cdf811df907cb4e4742fb8571a
+安装包: /home/jingtianyu/projects/geolocation-panel/artifacts/geo-panel-0.1.0.zip
+安装包 SHA256: f68bb1431fd84a1bae42fb7f40142e7a1860ed10d62972a232aa16379cbecebf
+
+BASELINE
+精确命令: node /home/jingtianyu/projects/geolocation-panel/tests/verify.mjs BASELINE
+输入: artifacts/original-manifest.json 的隔离副本；模拟网页与 RPC
+字面 stdout:
+BASELINE_PASS: CAPTURE_DISABLED; BROWSER_CAPTURE_DISABLED; ORIGINAL_SHA256_MATCH
+字面 stderr: ''
+退出状态: 0
+
+MODIFIED
+精确命令: node /home/jingtianyu/projects/geolocation-panel/tests/verify.mjs MODIFIED
+输入: extension/manifest.json 及扩展文件；5 项单元测试和模拟网页/RPC
+字面 stdout:
+MODIFIED_PASS: CAPTURE_ENABLED; UNIT_5_PASS; BROWSER_PASS
+字面 stderr: ''
+退出状态: 0
+
+ROLLBACK
+精确命令: node /home/jingtianyu/projects/geolocation-panel/tests/verify.mjs ROLLBACK
+输入: 修改版扩展的另一个副本；ROLLBACK.sh 恢复清单后重新启动 Chromium
+字面 stdout:
+ROLLBACK_PASS: CAPTURE_DISABLED; BROWSER_CAPTURE_DISABLED; ORIGINAL_SHA256_MATCH
+字面 stderr: ''
+退出状态: 0
+
+恢复状态：仅副本恢复到原始 manifest 哈希，独立 Chromium 验证读取脚本未注入（BROWSER_CAPTURE_DISABLED）。实际 extension/manifest.json 保留修改版，仍输出 CAPTURE_ENABLED。
+ROLLBACK.sh 先保存目标的修改版清单，再恢复原始清单；拒绝未知清单哈希。用户浏览器需要重新加载扩展并刷新网页才会生效。
+子命令、输入和完整 stdout/stderr/退出状态分别见 baseline-commands.json、modified-commands.json、rollback-commands.json。
+浏览器测试使用本地模拟页面和数据；panel-preview.png 为模拟坐标截图，不是真实游戏定位证据。
+实站探测：OpenGuessr 匿名页面停留在 Cloudflare 验证页，current=null；未验证真实街景和游戏落点。GeoGuessr 登录后的回合、Mac 安装均未测试。详见 live-probe.json。
+初次测试环境缺少匹配 Chromium，安装 Playwright Chromium 后已重跑通过。测试脚本也修正了 URL 权限筛选、地图加载等待与折叠输入框操作。
+源码复核修复了路由变化时的坐标归属，并增加已显示坐标与落点请求序号的一致性检查。
+Git 基线提交: 2ba54a2；首次提交遇到未配置作者，已在本仓库使用用户 GitHub noreply 身份修正。
+新增扩展、测试和说明，不包含其他项目文件、账号凭据或原截图。
+权限检查：仅 storage、sidePanel；内容脚本限定四个游戏主机；退出状态 0。
+源码语法检查：node --check extension/*.js 和 tests/*.mjs（逐文件执行）；全部退出状态 0。
+回退语法检查：bash -n artifacts/ROLLBACK.sh；退出状态 0。
+包检查：ZIP_PASS: 9 files; manifest 0.1.0; CRC verified；退出状态 0。
+
+Git 验收命令（工作目录为项目根目录），每项完整输出见 git-review.json：
+git status --short --branch | exit=0
+git diff --name-only | exit=0
+git diff --stat | exit=0
+git diff --numstat | exit=0
+git diff --check | exit=0
+git diff --cached --name-only | exit=0
+git diff --cached --stat | exit=0
+git diff --cached --numstat | exit=0
+git diff --cached --check | exit=0
+git apply --check --reverse --unidiff-zero artifacts/changes.patch | exit=0
+已暂存范围：extension/ 全部扩展文件、tests/、README.md、package 文件、.gitignore 与本任务验证资料；无无关改动。
+补充 changes.patch、git-review.json 与本记录后，在提交前再次执行 git diff --cached --check。
+DIFF_FILE 使用零上下文格式；反向应用检查通过，未实际应用补丁。

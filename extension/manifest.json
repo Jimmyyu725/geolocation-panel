@@ -1,6 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "Geo Panel",
-  "version": "0.0.0",
-  "description": "地理位置侧栏：基线版本，读取功能尚未启用。"
+  "name": "Geo Panel · 地理位置侧栏",
+  "version": "0.1.0",
+  "minimum_chrome_version": "116",
+  "description": "读取当前街景坐标、复制地图链接，并在兼容地图上辅助落点。",
+  "permissions": ["storage", "sidePanel"],
+  "action": { "default_title": "打开 Geo Panel" },
+  "background": { "service_worker": "background.js" },
+  "side_panel": { "default_path": "panel.html" },
+  "content_scripts": [
+    {
+      "matches": ["https://www.geoguessr.com/*", "https://geoguessr.com/*", "https://openguessr.com/*", "https://www.openguessr.com/*"],
+      "js": ["core.js", "capture.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://www.geoguessr.com/*", "https://geoguessr.com/*", "https://openguessr.com/*", "https://www.openguessr.com/*"],
+      "js": ["core.js", "bridge.js"],
+      "run_at": "document_start"
+    }
+  ]
 }

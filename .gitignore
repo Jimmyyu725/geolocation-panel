@@ -1,3 +1,5 @@
 node_modules/
 artifacts/*.zip
 artifacts/browser-profile/
+artifacts/baseline-extension/
+artifacts/rollback-extension/

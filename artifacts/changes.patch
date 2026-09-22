@@ -1,0 +1,742 @@
+diff --git a/.gitignore b/.gitignore
+index 5e804b8..7450ca3 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -3,0 +4,2 @@ artifacts/browser-profile/
++artifacts/baseline-extension/
++artifacts/rollback-extension/
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..db3f509
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,76 @@
++# Geo Panel · 地理位置侧栏
++
++一个无账号、无订阅、无需 API Key 的 Chrome Manifest V3 实验版扩展。扩展本身使用原生 JavaScript，不依赖远程脚本或后端。
++
++## 安装到 Mac 或其他电脑
++
++1. 下载 `geo-panel-0.1.0.zip` 并解压，保留整个文件夹。
++2. 在 Chrome 地址栏打开 `chrome://extensions`，开启右上角的「开发者模式」。
++3. 点击「加载已解压的扩展程序」，选择内含 `manifest.json` 的文件夹。
++4. 点击扩展图标打开 Geo Panel 侧栏；首次安装后刷新游戏页面。
++5. 在 GeoGuessr 或 OpenGuessr 加载街景，再点击「读取当前位置」。
++
++这是手动加载的开发版安装包，不是 Chrome 商店发布版。打包和测试在 Atlas Linux 上完成，Mac 上的安装和操作仍待验证。
++
++## 功能
++
++- 中文侧栏显示当前加载街景的经纬度；可复制坐标、打开 Google Maps。
++- 「读取时自动落点」：点击读取按钮后，在兼容地图上触发落点事件；不会点击提交答案。
++- 「缩放动画」：落点前逐级缩放地图。
++- 「随机偏移半径」：在指定米数内生成随机位置；不承诺任何具体游戏分数。
++- 手动粘贴坐标可查看地图，手动坐标不会发送到游戏地图。
++- 设置保存在本机；坐标只在游戏页面内存中保存。读取超过两分钟会要求重新加载街景。
++
++## 当前验证状态
++
++- 已通过：真实 Chromium 加载扩展、原生内容脚本注入与消息通信、模拟 RPC 的 fetch/XHR 解析、请求乱序、原始响应不被消耗、无效数据、页面路径变化、地图事件、缩放和偏移、操作中途取消、旧坐标拒绝、侧栏页面交互和设置持久化。
++- 上述地图和网络数据由本地测试路由提供，不代表在真实游戏内获得位置或落点成功。
++- 2026-09-22 匿名访问 OpenGuessr 停留在 Cloudflare 验证页面，未进入实际街景，未捕获坐标；GeoGuessr 登录后的实际回合尚未测试。
++- 未安装到用户的 Mac；没有提交游戏答案、发布到 Chrome 商店或配置自动更新。
++
++## 数据来源与适配范围
++
++只在 GeoGuessr / OpenGuessr 的顶层页面注入脚本，只观察 `maps.googleapis.com` 下两个固定街景 RPC 路径：`GetMetadata` 与 `SingleImageSearch`。
++
++解析器读取已知结构中的位置字段，不用正则在整个响应里随意挑选数字。未知格式返回空结果；请求开始、页面路由变化会清除旧位置，较晚返回的旧请求不会覆盖新结果。点击落点时也会检查读取序号。
++
++**坐标表示最近一次加载的街景，不等于经过认证的当前回合答案。** 游戏可能加载相邻街景或预取数据，移动后的位置也可能偏离回合起点。私有 RPC 的结构可能随站点升级变化。
++
++地图适配使用 Google Maps 对象的点击事件。扩展会发现晚加载的 Map 构造器及常用实例方法；当地图未捕获、存在多个可点击地图、地图被移除或游戏拒绝合成事件时，需进一步适配。OpenGuessr 若使用独立 iframe 或其他地图引擎，这一版不会对其注入或控制。提示「已发送落点」表示事件已发出，不保证游戏已接受标记。
++
++出现「地图适配尚未就绪」时，可先展开并缩放游戏小地图，然后重新读取再尝试。插件没有“不可检测”或完美分数承诺。
++
++## 本机数据
++
++权限只有 `storage` 与 `sidePanel`；内容脚本限定四个游戏站点主机。不读取 Cookie、账号密码或订阅数据，不收集遥测。点击地图链接时，浏览器会把所选经纬度作为 Google Maps URL 参数发送给 Google。网页内消息仅用于坐标和地图交互，不作为可信的安全边界。
++
++## 开发与验证
++
++```bash
++npm ci
++npx playwright install chromium
++npm test
++npm run test:browser
++node tests/verify.mjs BASELINE
++node tests/verify.mjs MODIFIED
++node tests/verify.mjs ROLLBACK
++```
++
++测试使用一次性的独立 Chromium 配置，不操作用户已有浏览器。依赖仅用于测试，不会进入安装包。
++
++## 回退
++
++在 Chrome 中停用扩展并刷新游戏页面，即可结束注入；卸载扩展会清除扩展设置。
++
++开发目录中的 `artifacts/ROLLBACK.sh` 接受一个扩展文件夹路径，保存当前清单后恢复原始无功能清单。先在副本上运行；工具只接受已记录的修改版清单哈希。Chrome 重新加载扩展并刷新游戏页面后生效。它不会删除代码或覆盖未知修改。恢复功能时重新解压发布 ZIP 并重新加载。
++
++完整命令、退出状态、原始与修改后的哈希见 `artifacts/VERIFICATION.txt`；页面外观见 `artifacts/panel-preview.png`，其中坐标来自本地模拟数据。
++
++## 技术资料
++
++- [Chrome 页面脚本与执行环境](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts)
++- [Chrome Side Panel API](https://developer.chrome.com/docs/extensions/reference/api/sidePanel)
++- [Google Maps 事件接口](https://developers.google.com/maps/documentation/javascript/reference/event)
++- [街景元数据字段的公开实现参考](https://greasyfork.org/en/scripts/563091-geoguessr-better-breakdown/code)
++
++本项目为独立编写，没有复制截图插件的品牌、图标或订阅系统。
+diff --git a/extension/background.js b/extension/background.js
+new file mode 100644
+index 0000000..82f90aa
+--- /dev/null
++++ b/extension/background.js
+@@ -0,0 +1 @@
++chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
+diff --git a/extension/bridge.js b/extension/bridge.js
+new file mode 100644
+index 0000000..e0c652d
+--- /dev/null
++++ b/extension/bridge.js
+@@ -0,0 +1,22 @@
++(() => {
++  const pending = new Map();
++  window.addEventListener('message', event => {
++    if (event.source !== window || event.origin !== location.origin || event.data?.channel !== 'geo-panel-out') return;
++    if (event.data.type === 'reply' && pending.has(event.data.id)) {
++      const { resolve, timer } = pending.get(event.data.id);
++      clearTimeout(timer); pending.delete(event.data.id);
++      resolve(event.data.result);
++    }
++  });
++  chrome.runtime.onMessage.addListener((message, sender, respond) => {
++    if (sender.id !== chrome.runtime.id || !['read', 'place', 'clear'].includes(message?.type)) return;
++    const id = crypto.randomUUID();
++    const timer = setTimeout(() => {
++      pending.delete(id);
++      respond({ ok: false, message: '页面读取超时，请刷新游戏页面后重试。' });
++    }, 5000);
++    pending.set(id, { resolve: respond, timer });
++    window.postMessage({ channel: 'geo-panel-in', id, type: message.type, options: message.options }, location.origin);
++    return true;
++  });
++})();
+diff --git a/extension/capture.js b/extension/capture.js
+new file mode 100644
+index 0000000..a7bfede
+--- /dev/null
++++ b/extension/capture.js
+@@ -0,0 +1,122 @@
++(() => {
++  const C = globalThis.GeoPanelCore;
++  let serial = 0, current = null, href = location.href, busy = false;
++  const maps = new Set(), patched = new WeakSet();
++  const send = (type, payload = {}) => window.postMessage({ channel: 'geo-panel-out', type, ...payload }, location.origin);
++  const reset = () => { serial++; current = null; send('state', { current }); };
++  function begin() { href = location.href; reset(); return serial; }
++  function finish(id, text, method) {
++    if (id !== serial) return;
++    if (location.href !== href) { href = location.href; reset(); return; }
++    const point = C.parse(text, method);
++    current = point ? { ...point, method, at: Date.now(), href, serial: id } : null;
++    send('state', { current });
++  }
++  const originalFetch = window.fetch;
++  window.fetch = function(input, init) {
++    const method = C.endpoint(typeof input === 'string' || input instanceof URL ? String(input) : input?.url);
++    const id = method ? begin() : null;
++    const promise = Reflect.apply(originalFetch, this, arguments);
++    if (method) promise.then(response => {
++      if (response.ok) response.clone().text().then(text => finish(id, text, method)).catch(() => {});
++    }, () => {});
++    return promise;
++  };
++  const open = XMLHttpRequest.prototype.open, sendXHR = XMLHttpRequest.prototype.send;
++  const requests = new WeakMap();
++  XMLHttpRequest.prototype.open = function(verb, url) {
++    const result = Reflect.apply(open, this, arguments);
++    requests.set(this, { method: C.endpoint(String(url)) });
++    return result;
++  };
++  XMLHttpRequest.prototype.send = function() {
++    const request = requests.get(this);
++    if (request?.method) {
++      const id = begin();
++      const loaded = () => {
++        if (this.status >= 200 && this.status < 300) {
++          try { finish(id, this.responseType === 'json' ? JSON.stringify(this.response) : this.responseText, request.method); } catch {}
++        }
++      };
++      this.addEventListener('load', loaded, { once: true });
++      this.addEventListener('loadend', () => this.removeEventListener('load', loaded), { once: true });
++    }
++    return Reflect.apply(sendXHR, this, arguments);
++  };
++  function remember(map) {
++    if (map?.getDiv && typeof map.panTo === 'function') maps.add(map);
++  }
++  function hookMaps() {
++    const api = window.google?.maps;
++    if (!api?.Map || patched.has(api.Map)) return;
++    const Original = api.Map;
++    const Wrapped = new Proxy(Original, {
++      construct(target, args, newTarget) {
++        const map = Reflect.construct(target, args, newTarget);
++        remember(map);
++        return map;
++      }
++    });
++    patched.add(Wrapped);
++    api.Map = Wrapped;
++    for (const key of ['setCenter', 'panTo', 'fitBounds', 'addListener']) {
++      const original = Original.prototype[key];
++      if (typeof original !== 'function') continue;
++      Original.prototype[key] = function() { remember(this); return Reflect.apply(original, this, arguments); };
++    }
++  }
++  function mapTarget() {
++    const api = window.google?.maps;
++    const candidates = [];
++    for (const map of maps) {
++      const div = map.getDiv();
++      if (!div?.isConnected) { maps.delete(map); continue; }
++      if (div.getClientRects().length && api.event.hasListeners(map, 'click')) candidates.push(map);
++    }
++    if (candidates.length !== 1) throw new Error(candidates.length ? '发现多个地图，请只保留一个猜测地图。' : '请展开游戏小地图并稍作缩放，然后重试；地图适配尚未就绪。');
++    return candidates[0];
++  }
++  async function place(options) {
++    if (busy) throw new Error('上一项地图操作仍在进行。');
++    const snapshot = current, route = location.href;
++    if (!snapshot || Date.now() - snapshot.at > 120000 || snapshot.href !== route) throw new Error('请重新加载当前街景以获取新坐标。');
++    if (options.expectedSerial !== snapshot.serial) throw new Error('街景已更新，请重新读取后再落点。');
++    const point = C.offset(snapshot, options.radius ?? 0);
++    const map = mapTarget();
++    busy = true;
++    try {
++      if (options.zoom) {
++        map.panTo(point);
++        for (const zoom of [4, 7, 10, 13]) {
++          if (current !== snapshot || location.href !== route) throw new Error('位置已变化，已取消落点。');
++          map.setZoom(zoom);
++          await new Promise(resolve => setTimeout(resolve, 140));
++        }
++      }
++      if (current !== snapshot || location.href !== route || !map.getDiv()?.isConnected) throw new Error('位置或地图已变化，已取消落点。');
++      const api = window.google.maps;
++      api.event.trigger(map, 'click', { latLng: new api.LatLng(point.lat, point.lng), domEvent: new MouseEvent('click') });
++      return { ok: true, point, message: '已发送落点，请检查游戏地图；提交仍由你点击。' };
++    } finally { busy = false; }
++  }
++  window.addEventListener('message', async event => {
++    if (event.source !== window || event.origin !== location.origin || event.data?.channel !== 'geo-panel-in') return;
++    const { type, id, options } = event.data;
++    if (typeof id !== 'string' || id.length > 100) return;
++    if (type === 'read') {
++      if (location.href !== href || (current && Date.now() - current.at > 120000)) { href = location.href; reset(); }
++      send('reply', { id, result: { ok: true, current } });
++    } else if (type === 'place') {
++      try { send('reply', { id, result: await place(options || {}) }); }
++      catch (error) { send('reply', { id, result: { ok: false, message: error.message } }); }
++    } else if (type === 'clear') {
++      reset(); send('reply', { id, result: { ok: true, current: null } });
++    }
++  });
++  // Polling avoids rewriting Google's loader globals. Late map construction is supported.
++  setInterval(() => {
++    try { hookMaps(); } catch {}
++    if (href !== location.href) { href = location.href; reset(); }
++  }, 100);
++  hookMaps();
++})();
+diff --git a/extension/core.js b/extension/core.js
+new file mode 100644
+index 0000000..d9f7055
+--- /dev/null
++++ b/extension/core.js
+@@ -0,0 +1,36 @@
++(() => {
++  const valid = value => !!value && Number.isFinite(value.lat) && Number.isFinite(value.lng)
++    && Math.abs(value.lat) <= 90 && Math.abs(value.lng) <= 180;
++  function endpoint(input) {
++    try {
++      const url = new URL(input);
++      const prefix = '/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/';
++      if (url.protocol !== 'https:' || url.hostname !== 'maps.googleapis.com') return null;
++      const method = url.pathname.slice(prefix.length);
++      return url.pathname.startsWith(prefix) && ['GetMetadata', 'SingleImageSearch'].includes(method) ? method : null;
++    } catch { return null; }
++  }
++  function parse(text, method) {
++    if (typeof text !== 'string' || text.length > 2_000_000) return null;
++    try {
++      const data = JSON.parse(text.replace(/^\)\]\}'\s*/, ''));
++      // These private RPC layouts may change; unknown layouts deliberately return no location.
++      const position = method === 'GetMetadata' ? data?.[1]?.[0]?.[5]?.[0]?.[1]?.[0]
++        : method === 'SingleImageSearch' ? data?.[1]?.[5]?.[0]?.[1]?.[0] : null;
++      const point = { lat: position?.[2], lng: position?.[3] };
++      return valid(point) ? point : null;
++    } catch { return null; }
++  }
++  function offset(point, meters = 0, random = Math.random) {
++    if (!valid(point) || !Number.isFinite(meters) || meters < 0 || meters > 100000) throw new Error('Invalid coordinates or radius');
++    if (!meters) return { lat: point.lat, lng: point.lng };
++    const toRad = Math.PI / 180;
++    const distance = Math.sqrt(random()) * meters / 6371008.8;
++    const bearing = random() * 2 * Math.PI;
++    const lat = point.lat * toRad, lng = point.lng * toRad;
++    const nextLat = Math.asin(Math.sin(lat) * Math.cos(distance) + Math.cos(lat) * Math.sin(distance) * Math.cos(bearing));
++    const nextLng = lng + Math.atan2(Math.sin(bearing) * Math.sin(distance) * Math.cos(lat), Math.cos(distance) - Math.sin(lat) * Math.sin(nextLat));
++    return { lat: nextLat / toRad, lng: ((nextLng / toRad + 540) % 360) - 180 };
++  }
++  globalThis.GeoPanelCore = Object.freeze({ valid, endpoint, parse, offset });
++})();
+diff --git a/extension/manifest.json b/extension/manifest.json
+index a586e10..c91ed53 100644
+--- a/extension/manifest.json
++++ b/extension/manifest.json
+@@ -3,3 +3,21 @@
+-  "name": "Geo Panel",
+-  "version": "0.0.0",
+-  "description": "地理位置侧栏：基线版本，读取功能尚未启用。"
++  "name": "Geo Panel · 地理位置侧栏",
++  "version": "0.1.0",
++  "minimum_chrome_version": "116",
++  "description": "读取当前街景坐标、复制地图链接，并在兼容地图上辅助落点。",
++  "permissions": ["storage", "sidePanel"],
++  "action": { "default_title": "打开 Geo Panel" },
++  "background": { "service_worker": "background.js" },
++  "side_panel": { "default_path": "panel.html" },
++  "content_scripts": [
++    {
++      "matches": ["https://www.geoguessr.com/*", "https://geoguessr.com/*", "https://openguessr.com/*", "https://www.openguessr.com/*"],
++      "js": ["core.js", "capture.js"],
++      "run_at": "document_start",
++      "world": "MAIN"
++    },
++    {
++      "matches": ["https://www.geoguessr.com/*", "https://geoguessr.com/*", "https://openguessr.com/*", "https://www.openguessr.com/*"],
++      "js": ["core.js", "bridge.js"],
++      "run_at": "document_start"
++    }
++  ]
+diff --git a/extension/panel.css b/extension/panel.css
+new file mode 100644
+index 0000000..3908606
+--- /dev/null
++++ b/extension/panel.css
+@@ -0,0 +1 @@
++:root{color-scheme:dark;font:14px/1.55 system-ui,-apple-system,sans-serif;background:#101815;color:#e9f1ec}*{box-sizing:border-box}body{margin:0;min-width:280px}header{display:flex;align-items:center;gap:12px;padding:24px 20px;border-bottom:1px solid #29392f}h1{font-size:19px;margin:0}header p{margin:2px 0;color:#9db4a6;font-size:11px}.logo{font-size:35px;color:#9de8af}.badge{margin-left:auto;color:#a9bdaf;border:1px solid #3b5142;border-radius:6px;padding:1px 6px;font-size:11px}main{padding:20px;max-width:540px;margin:auto}.hero{padding:9px 0 22px}.eyebrow{font-size:10px;letter-spacing:2px;color:#afd5b6}h2{font-size:28px;line-height:1.4;letter-spacing:-1px;margin:14px 0}.hero p,.muted{color:#9bb2a3;font-size:12px}button,.button{font:inherit;cursor:pointer;background:#263b2e;color:#e8f5ec;border:1px solid #41604b;border-radius:9px;padding:10px 12px;text-decoration:none;text-align:center;transition:background .15s}button:hover,.button:hover{background:#35513f}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid #b0e7a4;outline-offset:3px}button:disabled,.disabled{opacity:.4;pointer-events:none}.primary{width:100%;background:#b9e7a4;color:#142619;border:0;font-weight:700;margin-top:12px;padding:14px}.primary:hover{background:#d1f4bf}.card{border:1px solid #2c4233;background:#17241c;border-radius:14px;padding:17px;margin:0 0 14px}h3{font-size:13px;margin:0}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}#source{font-size:10px;color:#bad5b9}.coordinates{font:18px/1.6 ui-monospace,monospace;word-break:break-all;margin:14px 0 7px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions>*{font-size:12px}.wide{width:100%;margin-top:10px}.setting{padding:14px 0;border-bottom:1px solid #2b3c30}.setting small{display:block;color:#91a897;font-size:10px;margin-top:3px}input[type=checkbox]{appearance:none;min-width:39px;height:23px;border-radius:20px;background:#405146;position:relative;cursor:pointer}input[type=checkbox]:before{content:'';position:absolute;left:3px;top:3px;width:17px;height:17px;background:#bfd0c2;border-radius:50%;transition:transform .15s}input[type=checkbox]:checked{background:#699e55}input[type=checkbox]:checked:before{transform:translateX(16px);background:#e1f8d8}input[type=range]{width:100%;accent-color:#b9e7a4;margin-top:15px}output{font:12px ui-monospace,monospace;white-space:nowrap}summary{cursor:pointer;color:#bdd1c0}details[open] summary{margin-bottom:14px}details label{font-size:12px;color:#a5bbaa}input[type=text]{margin-top:6px;width:100%;padding:11px;background:#101c14;border:1px solid #42604b;border-radius:7px;color:#e1ede3}#status{padding:0 3px;font-size:12px;color:#c6d9bc;min-height:38px}footer{text-align:center;font-size:10px;color:#8da092;padding:10px 0 16px}
+diff --git a/extension/panel.html b/extension/panel.html
+new file mode 100644
+index 0000000..6e14b17
+--- /dev/null
++++ b/extension/panel.html
+@@ -0,0 +1,14 @@
++<!doctype html>
++<html lang="zh-CN">
++<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Geo Panel</title><link rel="stylesheet" href="panel.css"></head>
++<body>
++  <header><span class="logo">◎</span><div><h1>Geo Panel</h1><p>地理位置侧栏 · 本地运行</p></div><span class="badge">0.1</span></header>
++  <main>
++    <section class="hero"><span class="eyebrow">CURRENT LOCATION</span><h2>每一个坐标，<br>都通向一个地方。</h2><p>读取当前加载的街景位置，或粘贴坐标查看地图。</p><button id="read" class="primary">◎ 读取当前位置</button></section>
++    <section class="card" aria-label="坐标"><div class="row"><h3>位置</h3><span id="source">等待读取</span></div><p id="coordinates" class="coordinates">—, —</p><p id="freshness" class="muted">坐标只保留在当前游戏页面，刷新即清除。</p><div class="actions"><button id="copy" disabled>复制坐标</button><a id="maps" class="button disabled" target="_blank" rel="noopener noreferrer" aria-disabled="true">在地图查看 ↗</a></div><button id="place" class="wide" disabled>在游戏地图落点</button></section>
++    <section class="card"><h3>地图设置</h3><label class="row setting" for="auto"><span>读取时自动落点<small>只放标记，不提交答案</small></span><input id="auto" type="checkbox" role="switch"></label><label class="row setting" for="zoom"><span>缩放动画<small>落点前逐级放大</small></span><input id="zoom" type="checkbox" role="switch"></label><label for="radius" class="row setting"><span>随机偏移半径<small>距离范围，不保证对应游戏分数</small></span><output id="radiusValue">0 m</output></label><input id="radius" type="range" min="0" max="10000" step="100" value="0" aria-label="随机偏移半径（米）"></section>
++    <details class="card"><summary>手动查看坐标</summary><label for="manual">纬度, 经度</label><input id="manual" type="text" placeholder="25.033000, 121.565400" autocomplete="off"><button id="manualShow" class="wide">显示坐标与地图链接</button><p class="muted">手动坐标只用于查看，不发送到游戏地图。</p></details>
++    <p id="status" role="status" aria-live="polite">打开 GeoGuessr 或 OpenGuessr，安装后请刷新游戏页面。</p>
++    <footer>无账号 · 无 API Key · 无订阅<br>当前街景可能不同于回合起点；实站适配仍待验证。</footer>
++  </main><script src="core.js"></script><script src="panel.js"></script>
++</body></html>
+diff --git a/extension/panel.js b/extension/panel.js
+new file mode 100644
+index 0000000..ebe0e21
+--- /dev/null
++++ b/extension/panel.js
+@@ -0,0 +1,80 @@
++const $ = id => document.getElementById(id);
++const C = globalThis.GeoPanelCore;
++let point = null, tabId = null, detected = false;
++const note = text => { $('status').textContent = text; };
++function display(value, manual = false) {
++  point = C.valid(value) ? value : null;
++  detected = !!point && !manual;
++  $('coordinates').textContent = point ? `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}` : '—, —';
++  $('source').textContent = point ? (manual ? '手动输入' : point.method) : '等待读取';
++  $('freshness').textContent = point ? (manual ? '此位置来自你的手动输入。' : `读取时间 ${new Date(point.at).toLocaleTimeString()} · 当前加载街景`) : '坐标只保留在当前游戏页面，刷新即清除。';
++  $('copy').disabled = !point;
++  $('place').disabled = !detected;
++  $('maps').classList.toggle('disabled', !point);
++  $('maps').setAttribute('aria-disabled', String(!point));
++  if (point) $('maps').href = `https://www.google.com/maps/search/?api=1&query=${point.lat},${point.lng}`;
++  else $('maps').removeAttribute('href');
++}
++async function activeTab() {
++  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
++  if (!tab?.id) throw new Error('请先选择游戏标签页。');
++  return tab.id;
++}
++async function request(type, options) {
++  const active = await activeTab();
++  if (type === 'place' && active !== tabId) { display(null); throw new Error('标签页已切换，请重新读取位置。'); }
++  if (type === 'read') tabId = active;
++  let result;
++  try { result = await chrome.tabs.sendMessage(active, { type, options }); }
++  catch { throw new Error('请打开支持的游戏页面；安装扩展后需刷新页面。'); }
++  if (!result?.ok) throw new Error(result?.message || '页面没有返回有效结果。');
++  return result;
++}
++async function place() {
++  if (!detected) throw new Error('请先读取游戏位置。');
++  const result = await request('place', { zoom: $('zoom').checked, radius: Number($('radius').value), expectedSerial: point.serial });
++  note(result.message);
++}
++$('read').addEventListener('click', async () => {
++  $('read').disabled = true;
++  try {
++    const { current } = await request('read');
++    display(current);
++    if (!point) note('尚未捕获位置。请刷新或重新加载街景后重试；该站点的数据格式也可能尚未适配。');
++    else if ($('auto').checked) await place();
++    else note('已读取当前加载街景的坐标。');
++  } catch (error) { display(null); note(error.message); }
++  finally { $('read').disabled = false; }
++});
++$('place').addEventListener('click', async () => {
++  $('place').disabled = true;
++  try { await place(); } catch (error) { note(error.message); }
++  finally { $('place').disabled = !detected; }
++});
++$('copy').addEventListener('click', async () => {
++  if (!point) return;
++  try { await navigator.clipboard.writeText(`${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`); note('坐标已复制。'); }
++  catch { note('请直接选中上方坐标并复制。'); }
++});
++$('manualShow').addEventListener('click', () => {
++  const parts = $('manual').value.trim().split(/[,，\s]+/);
++  const value = parts.length === 2 && parts.every(part => part !== '') ? { lat: Number(parts[0]), lng: Number(parts[1]) } : null;
++  if (!C.valid(value)) { note('请输入有效的纬度、经度，例如 25.033, 121.5654。'); return; }
++  display(value, true); note('已显示手动输入的位置。');
++});
++for (const id of ['auto', 'zoom', 'radius']) $(id).addEventListener('input', async () => {
++  $('radiusValue').textContent = `${$('radius').value} m`;
++  try { await chrome.storage.local.set({ settings: { auto: $('auto').checked, zoom: $('zoom').checked, radius: Number($('radius').value) } }); }
++  catch { note('设置保存失败，请重试。'); }
++});
++chrome.storage.local.get('settings').then(({ settings }) => {
++  if (!settings) return;
++  $('auto').checked = settings.auto === true;
++  $('zoom').checked = settings.zoom === true;
++  $('radius').value = Number.isFinite(settings.radius) ? Math.max(0, Math.min(10000, settings.radius)) : 0;
++  $('radiusValue').textContent = `${$('radius').value} m`;
++}).catch(() => note('设置读取失败，本次使用默认值。'));
++chrome.tabs.onActivated.addListener(() => { tabId = null; display(null); });
++chrome.tabs.onUpdated.addListener((id, change) => {
++  if (id === tabId && (change.status === 'loading' || change.url)) { display(null); note('页面已变化，请重新读取位置。'); }
++});
+diff --git a/package-lock.json b/package-lock.json
+new file mode 100644
+index 0000000..1391cfb
+--- /dev/null
++++ b/package-lock.json
+@@ -0,0 +1,44 @@
++{
++  "name": "geolocation-panel",
++  "version": "0.1.0",
++  "lockfileVersion": 3,
++  "requires": true,
++  "packages": {
++    "": {
++      "name": "geolocation-panel",
++      "version": "0.1.0",
++      "devDependencies": {
++        "playwright": "^1.63.0"
++      }
++    },
++    "node_modules/playwright": {
++      "version": "1.63.0",
++      "resolved": "https://registry.npmjs.org/playwright/-/playwright-1.63.0.tgz",
++      "integrity": "sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "dependencies": {
++        "playwright-core": "1.63.0"
++      },
++      "bin": {
++        "playwright": "cli.js"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/playwright-core": {
++      "version": "1.63.0",
++      "resolved": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.63.0.tgz",
++      "integrity": "sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "bin": {
++        "playwright-core": "cli.js"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    }
++  }
++}
+diff --git a/package.json b/package.json
+index adba2ff..0562a21 100644
+--- a/package.json
++++ b/package.json
+@@ -1 +1 @@
+-{"name":"geolocation-panel","version":"0.1.0","private":true,"type":"module","scripts":{"test":"node --test tests/unit.test.mjs","test:browser":"node tests/browser.mjs","check":"node tests/check.mjs extension/manifest.json"}}
++{"name":"geolocation-panel","version":"0.1.0","private":true,"type":"module","scripts":{"test":"node --test tests/unit.test.mjs","test:browser":"node tests/browser.mjs","check":"node tests/check.mjs extension/manifest.json"},"devDependencies":{"playwright":"^1.63.0"}}
+\ No newline at end of file
+diff --git a/tests/browser.mjs b/tests/browser.mjs
+new file mode 100644
+index 0000000..e6a2a66
+--- /dev/null
++++ b/tests/browser.mjs
+@@ -0,0 +1,110 @@
++import { chromium } from 'playwright';
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import assert from 'node:assert/strict';
++import { html, mapsScript, payload, rpc } from './fixtures.mjs';
++const root = path.resolve(process.argv[2] || 'extension');
++const baseline = !JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'))).content_scripts;
++const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'geo-panel-test-'));
++const context = await chromium.launchPersistentContext(profile, {
++  channel: 'chromium', headless: true,
++  args: [`--disable-extensions-except=${root}`, `--load-extension=${root}`],
++  viewport: {width:390,height:1000}
++});
++let errors = [];
++context.on('page', page => page.on('pageerror', error => errors.push(error.message)));
++await context.route('https://**/*', async route => {
++  const url = new URL(route.request().url());
++  if (url.hostname === 'www.geoguessr.com') {
++    return route.fulfill({contentType:url.pathname === '/fixture-maps.js'?'text/javascript':'text/html', body:url.pathname==='/fixture-maps.js'?mapsScript:html});
++  }
++  if (url.hostname === 'maps.googleapis.com') {
++    if (url.searchParams.has('delay')) await new Promise(resolve=>setTimeout(resolve,Number(url.searchParams.get('delay'))));
++    return route.fulfill({contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:url.searchParams.has('invalid')?'{}':payload(Number(url.searchParams.get('lat')||25.033),121.5654,url.pathname.split('/').at(-1))});
++  }
++  return route.abort();
++});
++try {
++  const game = await context.newPage();
++  await game.goto('https://www.geoguessr.com/game/fixture');
++  await game.waitForFunction(()=>!!window.map?.events);
++  if (baseline) {
++    assert.equal(await game.evaluate(()=>typeof window.GeoPanelCore), 'undefined');
++    console.log('BROWSER_CAPTURE_DISABLED');
++  } else {
++    const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
++    const id = new URL(worker.url()).host;
++    const tab = await worker.evaluate(async()=> (await chrome.tabs.query({active:true,currentWindow:true}))[0].id);
++    const send = async (type, options) => {
++      if (type === 'place' && options?.expectedSerial === undefined) {
++        const state = await send('read');
++        options = { ...options, expectedSerial: state.current?.serial };
++      }
++      return worker.evaluate(async({tab,type,options})=>chrome.tabs.sendMessage(tab,{type,options}),{tab,type,options});
++    };
++    const fetchPoint = async(query='') => {
++      await game.evaluate(async url => { const response=await fetch(url); window.originalResponse=await response.text(); },rpc('GetMetadata')+query);
++      await game.waitForTimeout(50);
++    };
++    await fetchPoint();
++    let read = await send('read');
++    assert.equal(read.current.lat,25.033);
++    assert.equal(read.current.lng,121.5654);
++    assert.equal(await game.evaluate(()=>window.originalResponse),payload(25.033,121.5654));
++    const firstPlace = await send('place',{radius:0,zoom:false}); assert.equal(firstPlace.ok,true, JSON.stringify(firstPlace));
++    assert.deepEqual(await game.evaluate(()=>clicks.at(-1)),{lat:25.033,lng:121.5654});
++    await send('place',{radius:1000,zoom:true});
++    assert.deepEqual(await game.evaluate(()=>zooms),[4,7,10,13]);
++    assert.notDeepEqual(await game.evaluate(()=>clicks.at(-1)),{lat:25.033,lng:121.5654});
++    // A newer request wins even when an older response arrives last.
++    await game.evaluate(async url => {await Promise.all([fetch(url+'?lat=10&delay=200'),fetch(url+'?lat=20&delay=10')]);},rpc('GetMetadata'));
++    await game.waitForTimeout(60);
++    assert.equal((await send('read')).current.lat,20);
++    assert.equal((await send('place',{expectedSerial:read.current.serial})).ok,false);
++    await fetchPoint('?invalid=1');
++    assert.equal((await send('read')).current,null);
++    assert.equal((await send('place',{})).ok,false);
++    // XHR observes JSON responses while preserving the original response.
++    await game.evaluate(url=>new Promise(resolve=>{const xhr=new XMLHttpRequest();xhr.open('GET',url);xhr.responseType='json';xhr.onload=resolve;xhr.send();}),rpc('SingleImageSearch'));
++    await game.waitForTimeout(50);
++    assert.equal((await send('read')).current.method,'SingleImageSearch');
++    await game.evaluate(()=>history.pushState({},'', '/game/new-round'));
++    assert.equal((await send('read')).current,null);
++    await fetchPoint();
++    // Navigation during animated placement cancels the action.
++    const before=await game.evaluate(()=>clicks.length);
++    const placement=send('place',{zoom:true,radius:0});
++    await game.waitForTimeout(180);
++    await game.evaluate(()=>history.pushState({},'', '/game/another-round'));
++    assert.equal((await placement).ok,false);
++    assert.equal(await game.evaluate(()=>clicks.length),before);
++    await fetchPoint();
++    // Real extension page, storage, content-script bridge, and main-world scripts.
++    const panel = await context.newPage();
++    await panel.goto(`chrome-extension://${id}/panel.html`);
++    await panel.locator('summary').click();
++    await panel.locator('#manual').fill('25.033, 121.5654');
++    await panel.locator('#manualShow').click();
++    assert.equal(await panel.locator('#coordinates').innerText(),'25.033000, 121.565400');
++    assert.ok(await panel.locator('#place').isDisabled());
++    assert.equal(await panel.locator('#maps').getAttribute('href'),'https://www.google.com/maps/search/?api=1&query=25.033,121.5654');
++    await panel.locator('#zoom').check();
++    await panel.waitForTimeout(100);
++    await panel.reload();
++    assert.ok(await panel.locator('#zoom').isChecked());
++    await worker.evaluate(tab=>chrome.tabs.update(tab,{active:true}),tab);
++    await panel.locator('#read').click();
++    await panel.waitForFunction(()=>document.getElementById('coordinates').textContent==='25.033000, 121.565400');
++    assert.equal(await panel.locator('#coordinates').innerText(),'25.033000, 121.565400');
++    assert.ok(await panel.locator('#place').isEnabled());
++    await panel.screenshot({path:'artifacts/panel-preview.png',fullPage:true});
++    const behavior=await worker.evaluate(()=>chrome.sidePanel.getPanelBehavior());
++    assert.equal(behavior.openPanelOnActionClick,true);
++    assert.deepEqual(errors,[]);
++    console.log('BROWSER_PASS: extension load, fetch, XHR, response preservation, latest-request wins, invalid data, route reset, pin event, zoom, radius, cancellation, panel, storage, sidePanel');
++  }
++} finally {
++  await context.close();
++  fs.rmSync(profile,{recursive:true,force:true});
++}
+diff --git a/tests/fixtures.mjs b/tests/fixtures.mjs
+new file mode 100644
+index 0000000..5b83dd5
+--- /dev/null
++++ b/tests/fixtures.mjs
+@@ -0,0 +1,29 @@
++export const rpc = method => `https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/${method}`;
++export function payload(lat, lng, method = 'GetMetadata') {
++  const inner = [];
++  inner[5] = [[null, [[null, null, lat, lng]]]];
++  return JSON.stringify([null, method === 'GetMetadata' ? [inner] : inner]);
++}
++export const html = `<!doctype html><html><head><title>Geo Panel integration fixture</title></head><body><h1>本地模拟街景页面</h1><div id="map" style="width:600px;height:400px;background:#284639">地图模拟组件</div><script src="/fixture-maps.js"></script></body></html>`;
++export const mapsScript = `
++window.clicks = [];
++window.zooms = [];
++class FixtureMap {
++  constructor(div) { this.div = div; this.events = {}; }
++  getDiv() { return this.div; }
++  panTo(point) { this.center = point; }
++  setCenter(point) { this.center = point; }
++  setZoom(value) { window.zooms.push(value); }
++  addListener(type, callback) { this.events[type] ||= []; this.events[type].push(callback); }
++}
++window.google = { maps: { Map: FixtureMap, LatLng: class {
++  constructor(lat, lng) { this.lat = () => lat; this.lng = () => lng; }
++}, event: {
++  hasListeners: (map, type) => !!map.events[type]?.length,
++  trigger: (map, type, event) => map.events[type]?.forEach(callback => callback(event))
++} } };
++setTimeout(() => {
++  window.map = new google.maps.Map(document.getElementById('map'));
++  map.addListener('click', event => clicks.push({lat:event.latLng.lat(),lng:event.latLng.lng()}));
++}, 350);
++`;
+diff --git a/tests/unit.test.mjs b/tests/unit.test.mjs
+new file mode 100644
+index 0000000..76e499f
+--- /dev/null
++++ b/tests/unit.test.mjs
+@@ -0,0 +1,45 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import '../extension/core.js';
++import { payload, rpc } from './fixtures.mjs';
++const C = globalThis.GeoPanelCore;
++test('both known RPC layouts and anti-XSSI prefix', () => {
++  for (const method of ['GetMetadata', 'SingleImageSearch']) {
++    assert.deepEqual(C.parse(payload(25.033, 121.5654, method), method), {lat:25.033,lng:121.5654});
++    assert.deepEqual(C.parse(")]}'\n" + payload(0, 0, method), method), {lat:0,lng:0});
++  }
++});
++test('unknown or malformed data never guesses a coordinate', () => {
++  for (const text of ['', '{', '[[25,121]]', '{"lat":25,"lng":121}', payload(91, 121), payload(25, 181), payload('25', '121'), ' '.repeat(2000001)]) {
++    assert.equal(C.parse(text, 'GetMetadata'), null);
++  }
++});
++test('only the exact Google RPC endpoints are observed', () => {
++  assert.equal(C.endpoint(rpc('GetMetadata')), 'GetMetadata');
++  assert.equal(C.endpoint(rpc('SingleImageSearch') + '?x=1'), 'SingleImageSearch');
++  for (const value of ['https://example.com/' + rpc('GetMetadata'), rpc('GetMetadata') + '/extra', rpc('GetMetadata').replace('https:', 'http:'), rpc('GetMetadata').replace('maps.googleapis.com', 'maps.googleapis.com.evil.test')]) assert.equal(C.endpoint(value), null);
++});
++test('offset radius is bounded and handles poles and the dateline', () => {
++  const distance = (a,b) => {
++    const r = Math.PI/180;
++    const h = Math.sin((b.lat-a.lat)*r/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin((b.lng-a.lng)*r/2)**2;
++    return 2*6371008.8*Math.asin(Math.min(1, Math.sqrt(h)));
++  };
++  for (const point of [{lat:90,lng:180},{lat:-89.99,lng:-179.99},{lat:0,lng:0},{lat:25,lng:121}]) {
++    assert.deepEqual(C.offset(point, 0), point);
++    for (let i=0;i<100;i++) { const result=C.offset(point,10000); assert.ok(C.valid(result)); assert.ok(distance(point,result)<=10000.001); }
++  }
++  assert.throws(() => C.offset({lat:25,lng:121}, -1));
++  assert.throws(() => C.offset({lat:25,lng:121}, Infinity));
++});
++test('manifest is scoped and shipped files exist', () => {
++  const m = JSON.parse(fs.readFileSync('extension/manifest.json'));
++  assert.deepEqual(m.permissions, ['storage','sidePanel']);
++  assert.equal(m.content_scripts[0].world, 'MAIN');
++  assert.equal(m.content_scripts[0].run_at, 'document_start');
++  for (const entry of m.content_scripts) {
++    assert.ok(entry.matches.every(match => /^https:\/\/(www\.)?(geoguessr|openguessr)\.com\/\*$/.test(match)));
++    for (const file of entry.js) assert.ok(fs.existsSync('extension/'+file));
++  }
++});
+diff --git a/tests/verify.mjs b/tests/verify.mjs
+new file mode 100644
+index 0000000..da8c7b3
+--- /dev/null
++++ b/tests/verify.mjs
+@@ -0,0 +1,40 @@
++import fs from 'node:fs';
++import path from 'node:path';
++import { fileURLToPath } from 'node:url';
++import { spawnSync } from 'node:child_process';
++import { createHash } from 'node:crypto';
++import assert from 'node:assert/strict';
++process.chdir(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'));
++const mode = process.argv[2];
++assert.ok(['BASELINE','MODIFIED','ROLLBACK'].includes(mode));
++const records=[];
++function run(command,args) {
++  const result=spawnSync(command,args,{encoding:'utf8',timeout:90000});
++  records.push({command:[command,...args],input:'no stdin; files and isolated browser fixtures',stdout:result.stdout,stderr:result.stderr,exit:result.status});
++  fs.writeFileSync(`artifacts/${mode.toLowerCase()}-commands.json`,JSON.stringify(records,null,2)+'\n');
++  assert.equal(result.status,0,`${command} failed: ${result.stderr}\n${result.stdout}`);
++  return result.stdout;
++}
++const sha = file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
++const original='artifacts/original-manifest.json';
++assert.equal(sha(original),'2f0cc1571676b619cf5c963ed1a7dae1c3e07e80ef673f8d2c697c6c9e9588d5');
++if(mode==='MODIFIED') {
++  assert.equal(run('node',['tests/check.mjs','extension/manifest.json']).trim(),'CAPTURE_ENABLED');
++  const output=run('node',['--test','tests/unit.test.mjs']);
++  assert.match(output,/pass 5/);
++  const browser=run('node',['tests/browser.mjs']);
++  assert.match(browser,/BROWSER_PASS:/);
++  console.log('MODIFIED_PASS: CAPTURE_ENABLED; UNIT_5_PASS; BROWSER_PASS');
++} else {
++  const target=`artifacts/${mode==='BASELINE'?'baseline':'rollback'}-extension`;
++  fs.mkdirSync(target,{recursive:true});
++  if(mode==='BASELINE') fs.copyFileSync(original,path.join(target,'manifest.json'));
++  else {
++    fs.cpSync('extension',target,{recursive:true});
++    run('bash',['artifacts/ROLLBACK.sh',path.resolve(target)]);
++  }
++  assert.equal(sha(path.join(target,'manifest.json')),sha(original));
++  assert.equal(run('node',['tests/check.mjs',path.join(target,'manifest.json')]).trim(),'CAPTURE_DISABLED');
++  assert.equal(run('node',['tests/browser.mjs',path.resolve(target)]).trim(),'BROWSER_CAPTURE_DISABLED');
++  console.log(`${mode}_PASS: CAPTURE_DISABLED; BROWSER_CAPTURE_DISABLED; ORIGINAL_SHA256_MATCH`);
++}

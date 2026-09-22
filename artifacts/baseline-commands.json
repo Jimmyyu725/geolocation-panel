@@ -1,0 +1,24 @@
+[
+  {
+    "command": [
+      "node",
+      "tests/check.mjs",
+      "artifacts/baseline-extension/manifest.json"
+    ],
+    "input": "no stdin; files and isolated browser fixtures",
+    "stdout": "CAPTURE_DISABLED\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": [
+      "node",
+      "tests/browser.mjs",
+      "/home/jingtianyu/projects/geolocation-panel/artifacts/baseline-extension"
+    ],
+    "input": "no stdin; files and isolated browser fixtures",
+    "stdout": "BROWSER_CAPTURE_DISABLED\n",
+    "stderr": "",
+    "exit": 0
+  }
+]

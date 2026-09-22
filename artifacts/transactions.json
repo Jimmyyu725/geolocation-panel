@@ -1,0 +1,26 @@
+[
+  {
+    "mode": "BASELINE",
+    "command": "node /home/jingtianyu/projects/geolocation-panel/tests/verify.mjs BASELINE",
+    "input": "artifacts/original-manifest.json 的隔离副本；模拟网页与 RPC",
+    "stdout": "BASELINE_PASS: CAPTURE_DISABLED; BROWSER_CAPTURE_DISABLED; ORIGINAL_SHA256_MATCH\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "mode": "MODIFIED",
+    "command": "node /home/jingtianyu/projects/geolocation-panel/tests/verify.mjs MODIFIED",
+    "input": "extension/manifest.json 及扩展文件；5 项单元测试和模拟网页/RPC",
+    "stdout": "MODIFIED_PASS: CAPTURE_ENABLED; UNIT_5_PASS; BROWSER_PASS\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "mode": "ROLLBACK",
+    "command": "node /home/jingtianyu/projects/geolocation-panel/tests/verify.mjs ROLLBACK",
+    "input": "修改版扩展的另一个副本；ROLLBACK.sh 恢复清单后重新启动 Chromium",
+    "stdout": "ROLLBACK_PASS: CAPTURE_DISABLED; BROWSER_CAPTURE_DISABLED; ORIGINAL_SHA256_MATCH\n",
+    "stderr": "",
+    "exit": 0
+  }
+]

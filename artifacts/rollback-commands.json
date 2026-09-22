@@ -1,0 +1,35 @@
+[
+  {
+    "command": [
+      "bash",
+      "artifacts/ROLLBACK.sh",
+      "/home/jingtianyu/projects/geolocation-panel/artifacts/rollback-extension"
+    ],
+    "input": "no stdin; files and isolated browser fixtures",
+    "stdout": "ROLLBACK_RESTORED: manifest preserved; capture disabled after extension and page reload\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": [
+      "node",
+      "tests/check.mjs",
+      "artifacts/rollback-extension/manifest.json"
+    ],
+    "input": "no stdin; files and isolated browser fixtures",
+    "stdout": "CAPTURE_DISABLED\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": [
+      "node",
+      "tests/browser.mjs",
+      "/home/jingtianyu/projects/geolocation-panel/artifacts/rollback-extension"
+    ],
+    "input": "no stdin; files and isolated browser fixtures",
+    "stdout": "BROWSER_CAPTURE_DISABLED\n",
+    "stderr": "",
+    "exit": 0
+  }
+]

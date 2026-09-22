@@ -1,0 +1,62 @@
+[
+  {
+    "command": "git status --short --branch",
+    "stdout": "## feature/geolocation-panel\nM  .gitignore\nA  README.md\nA  artifacts/ROLLBACK.sh\nA  artifacts/VERIFICATION.txt\nA  artifacts/baseline-commands.json\nA  artifacts/live-probe.json\nA  artifacts/modified-commands.json\nA  artifacts/panel-preview.png\nA  artifacts/rollback-commands.json\nA  artifacts/transactions.json\nA  extension/background.js\nA  extension/bridge.js\nA  extension/capture.js\nA  extension/core.js\nM  extension/manifest.json\nA  extension/panel.css\nA  extension/panel.html\nA  extension/panel.js\nA  package-lock.json\nM  package.json\nA  tests/browser.mjs\nA  tests/fixtures.mjs\nA  tests/unit.test.mjs\nA  tests/verify.mjs\n?? artifacts/changes.patch\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": "git diff --name-only",
+    "stdout": "",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": "git diff --stat",
+    "stdout": "",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": "git diff --numstat",
+    "stdout": "",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": "git diff --check",
+    "stdout": "",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": "git diff --cached --name-only",
+    "stdout": ".gitignore\nREADME.md\nartifacts/ROLLBACK.sh\nartifacts/VERIFICATION.txt\nartifacts/baseline-commands.json\nartifacts/live-probe.json\nartifacts/modified-commands.json\nartifacts/panel-preview.png\nartifacts/rollback-commands.json\nartifacts/transactions.json\nextension/background.js\nextension/bridge.js\nextension/capture.js\nextension/core.js\nextension/manifest.json\nextension/panel.css\nextension/panel.html\nextension/panel.js\npackage-lock.json\npackage.json\ntests/browser.mjs\ntests/fixtures.mjs\ntests/unit.test.mjs\ntests/verify.mjs\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": "git diff --cached --stat",
+    "stdout": " .gitignore                       |   2 +\n README.md                        |  76 ++++++++++++++++++++++++\n artifacts/ROLLBACK.sh            |  20 +++++++\n artifacts/VERIFICATION.txt       |  50 ++++++++++++++++\n artifacts/baseline-commands.json |  24 ++++++++\n artifacts/live-probe.json        |  11 ++++\n artifacts/modified-commands.json |  34 +++++++++++\n artifacts/panel-preview.png      | Bin 0 -> 71687 bytes\n artifacts/rollback-commands.json |  35 +++++++++++\n artifacts/transactions.json      |  26 +++++++++\n extension/background.js          |   1 +\n extension/bridge.js              |  22 +++++++\n extension/capture.js             | 122 +++++++++++++++++++++++++++++++++++++++\n extension/core.js                |  36 ++++++++++++\n extension/manifest.json          |  24 +++++++-\n extension/panel.css              |   1 +\n extension/panel.html             |  14 +++++\n extension/panel.js               |  80 +++++++++++++++++++++++++\n package-lock.json                |  44 ++++++++++++++\n package.json                     |   2 +-\n tests/browser.mjs                | 110 +++++++++++++++++++++++++++++++++++\n tests/fixtures.mjs               |  29 ++++++++++\n tests/unit.test.mjs              |  45 +++++++++++++++\n tests/verify.mjs                 |  40 +++++++++++++\n 24 files changed, 844 insertions(+), 4 deletions(-)\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": "git diff --cached --numstat",
+    "stdout": "2\t0\t.gitignore\n76\t0\tREADME.md\n20\t0\tartifacts/ROLLBACK.sh\n50\t0\tartifacts/VERIFICATION.txt\n24\t0\tartifacts/baseline-commands.json\n11\t0\tartifacts/live-probe.json\n34\t0\tartifacts/modified-commands.json\n-\t-\tartifacts/panel-preview.png\n35\t0\tartifacts/rollback-commands.json\n26\t0\tartifacts/transactions.json\n1\t0\textension/background.js\n22\t0\textension/bridge.js\n122\t0\textension/capture.js\n36\t0\textension/core.js\n21\t3\textension/manifest.json\n1\t0\textension/panel.css\n14\t0\textension/panel.html\n80\t0\textension/panel.js\n44\t0\tpackage-lock.json\n1\t1\tpackage.json\n110\t0\ttests/browser.mjs\n29\t0\ttests/fixtures.mjs\n45\t0\ttests/unit.test.mjs\n40\t0\ttests/verify.mjs\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": "git diff --cached --check",
+    "stdout": "",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": "git apply --check --reverse --unidiff-zero artifacts/changes.patch",
+    "stdout": "",
+    "stderr": "",
+    "exit": 0
+  }
+]

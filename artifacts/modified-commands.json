@@ -1,0 +1,34 @@
+[
+  {
+    "command": [
+      "node",
+      "tests/check.mjs",
+      "extension/manifest.json"
+    ],
+    "input": "no stdin; files and isolated browser fixtures",
+    "stdout": "CAPTURE_ENABLED\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": [
+      "node",
+      "--test",
+      "tests/unit.test.mjs"
+    ],
+    "input": "no stdin; files and isolated browser fixtures",
+    "stdout": "✔ both known RPC layouts and anti-XSSI prefix (1.738349ms)\n✔ unknown or malformed data never guesses a coordinate (1.426507ms)\n✔ only the exact Google RPC endpoints are observed (0.317561ms)\n✔ offset radius is bounded and handles poles and the dateline (4.823883ms)\n✔ manifest is scoped and shipped files exist (1.259256ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 81.622779\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "command": [
+      "node",
+      "tests/browser.mjs"
+    ],
+    "input": "no stdin; files and isolated browser fixtures",
+    "stdout": "BROWSER_PASS: extension load, fetch, XHR, response preservation, latest-request wins, invalid data, route reset, pin event, zoom, radius, cancellation, panel, storage, sidePanel\n",
+    "stderr": "",
+    "exit": 0
+  }
+]
